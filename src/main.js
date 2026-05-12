@@ -2,6 +2,13 @@ import { BootScene } from './scenes/BootScene.js';
 import { WorldScene } from './scenes/WorldScene.js';
 import { InteriorScene } from './scenes/InteriorScene.js';
 
+if (typeof Phaser === 'undefined') {
+  throw new Error('Phaser failed to load before the game module.');
+}
+
+const gameContainer = document.getElementById('game');
+gameContainer.textContent = '';
+
 const config = {
   type: Phaser.AUTO,
   parent: 'game',
