@@ -27,9 +27,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (input.lengthSq() > 0) {
       input.normalize();
-      this.body.setAcceleration(input.x * ACCELERATION, input.y * ACCELERATION);
+
+      this.body.setDrag(0, 0);
       this.body.setMaxVelocity(MAX_SPEED);
-      this.updateFacing(screenInput);
+      this.body.setAcceleration(input.x * ACCELERATION, input.y * ACCELERATION);
+
+      this.updateFacing(input);
       this.play(`walk-${this.facing}`, true);
     } else {
       this.body.setAcceleration(0, 0);
@@ -39,7 +42,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   updateFacing(input) {
-    if (Math.abs(input.x) > Math.abs(input.y)) this.facing = input.x > 0 ? 'right' : 'left';
-    else this.facing = input.y > 0 ? 'down' : 'up';
+    if (Math.abs(input.x) > Math.abs(input.y)) {
+      this.facing = input.x > 0 ? 'right' : 'left';
+    } else {
+      this.facing = input.y > 0 ? 'down' : 'up';
+    }
   }
 }
