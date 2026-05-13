@@ -3,21 +3,9 @@ import { SaveManager } from '../systems/SaveManager.js';
 import { TILE_SIZE, TILES } from '../world/tiles.js';
 
 const INTERIORS = {
-  elderHome: {
-    name: 'Elder House',
-    message: 'Maps, bells, and dried moonflowers crowd the elder\'s table.',
-    tint: 0xf0b46b,
-  },
-  weaverHome: {
-    name: 'Weaver House',
-    message: 'A half-finished tapestry shows the lake under three impossible moons.',
-    tint: 0xb08cff,
-  },
-  pondHome: {
-    name: 'Lake Cottage',
-    message: 'Shells on the windowsill click softly, though no hand touches them.',
-    tint: 0x8fd7ff,
-  },
+  homeA: { tint: 0xf0b46b },
+  homeB: { tint: 0xb08cff },
+  homeC: { tint: 0x8fd7ff },
 };
 
 export class InteriorScene extends Phaser.Scene {
@@ -27,7 +15,7 @@ export class InteriorScene extends Phaser.Scene {
 
   create(data = {}) {
     this.returnTo = data.returnTo ?? { x: 48.5, y: 30 };
-    this.interior = INTERIORS[data.interior] ?? INTERIORS.elderHome;
+    this.interior = INTERIORS[data.interior] ?? INTERIORS.homeA;
     this.createRoom();
     this.createPlayer();
     this.createCamera();
@@ -53,7 +41,7 @@ export class InteriorScene extends Phaser.Scene {
     floor[8][9] = TILES.rug;
 
     this.map = this.make.tilemap({ data: floor, tileWidth: TILE_SIZE, tileHeight: TILE_SIZE });
-    const tileset = this.map.addTilesetImage('liora-tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0, 0);
+    const tileset = this.map.addTilesetImage('world-tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0, 0);
     this.map.createLayer(0, tileset, 96, 32);
     this.wallLayer = this.map.createBlankLayer('walls', tileset, 96, 32, width, height);
     walls.forEach((row, y) => row.forEach((tile, x) => {
@@ -65,7 +53,7 @@ export class InteriorScene extends Phaser.Scene {
     this.add.rectangle(256, 144, width * TILE_SIZE, height * TILE_SIZE, this.interior.tint, 0.08)
       .setBlendMode(Phaser.BlendModes.ADD)
       .setDepth(30);
-    this.add.text(112, 44, this.interior.name, { fontFamily: 'Georgia, serif', fontSize: '13px', color: '#f8efd0' }).setDepth(40);
+    this.add.text(112, 44, 'Room', { fontFamily: 'monospace', fontSize: '11px', color: '#f8efd0' }).setDepth(40);
     this.add.sprite(180, 96, 'torch-flame').play('torch-flicker').setDepth(25);
     this.add.sprite(324, 96, 'torch-flame').play('torch-flicker').setDepth(25);
   }
@@ -82,20 +70,20 @@ export class InteriorScene extends Phaser.Scene {
   }
 
   createHud() {
-    this.prompt = this.add.text(256, 250, 'E / Space: inspect   ↓ at door: leave', {
+    this.prompt = this.add.text(256, 252, 'E / Space: Interact   ↓: Exit', {
       fontFamily: 'monospace',
-      fontSize: '12px',
+      fontSize: '11px',
       color: '#fff3ba',
       backgroundColor: '#192033cc',
       padding: { x: 6, y: 3 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
-    this.dialogue = this.add.text(256, 222, '', {
-      fontFamily: 'Georgia, serif',
-      fontSize: '14px',
+
+    this.label = this.add.text(256, 226, '', {
+      fontFamily: 'monospace',
+      fontSize: '11px',
       color: '#f8efd0',
-      backgroundColor: '#182033ee',
-      padding: { x: 10, y: 8 },
-      wordWrap: { width: 430 },
+      backgroundColor: '#141b2dcc',
+      padding: { x: 6, y: 3 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(101).setAlpha(0);
   }
 
@@ -112,8 +100,9 @@ export class InteriorScene extends Phaser.Scene {
   }
 
   inspect() {
-    this.dialogue.setText(this.interior.message).setAlpha(1);
-    this.time.delayedCall(2800, () => this.tweens.add({ targets: this.dialogue, alpha: 0, duration: 400 }));
+    this.label.setText('Interact').setAlpha(1);
+    this.tweens.killTweensOf(this.label);
+    this.tweens.add({ targets: this.label, alpha: 0, delay: 500, duration: 220 });
   }
 
   leave() {
