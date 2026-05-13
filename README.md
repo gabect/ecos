@@ -1,6 +1,6 @@
 # Echoes of Liora
 
-A peaceful top-down 32-bit inspired exploration prototype built with HTML5, CSS3, JavaScript, Phaser 3, and tilemap-driven world composition. The outdoor map uses a 45° rotated camera, free walking, collision obstacles, and a custom animated hero with visible arm and foot motion.
+A peaceful top-down 32-bit inspired exploration prototype built with HTML5, CSS3, JavaScript, Phaser 3, and tilemap-driven world composition. The outdoor map uses a classic top-down 3/4 adventure view with mostly horizontal/vertical terrain, depth from shadows and foreground layers, free walking, collision obstacles, and a custom animated hero with visible arm and foot motion.
 
 ## Run
 

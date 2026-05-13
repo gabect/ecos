@@ -37,12 +37,34 @@ export class WorldScene extends Phaser.Scene {
     this.paintLayer(this.foregroundLayer, layers.foreground);
     this.blockerLayer.setCollisionByExclusion([-1]);
     this.blockerLayer.setAlpha(0);
-    this.foregroundLayer.setDepth(50);
+    this.foregroundLayer.setDepth(1200);
+    this.createDepthShadows(layers);
   }
 
   paintLayer(layer, data) {
     data.forEach((row, y) => row.forEach((tile, x) => {
       if (tile >= 0) layer.putTileAt(tile, x, y);
+    }));
+  }
+
+  createDepthShadows(layers) {
+    this.depthShadows = this.add.graphics().setDepth(4).setAlpha(0.42);
+    const shadowTiles = new Set([TILES.tree, TILES.ruin, TILES.fence, TILES.wall, TILES.cliff, TILES.cliffTop]);
+
+    layers.blockers.forEach((row, y) => row.forEach((tile, x) => {
+      if (!shadowTiles.has(tile)) return;
+      const px = x * TILE_SIZE;
+      const py = y * TILE_SIZE;
+
+      if (tile === TILES.tree) {
+        this.depthShadows.fillStyle(0x101722, 0.42).fillEllipse(px + 9, py + 15, 17, 7);
+      } else if (tile === TILES.wall) {
+        this.depthShadows.fillStyle(0x101722, 0.2).fillRect(px + 2, py + 13, TILE_SIZE, 5);
+      } else if (tile === TILES.cliff || tile === TILES.cliffTop) {
+        this.depthShadows.fillStyle(0x101722, 0.18).fillRect(px + 1, py + 12, TILE_SIZE + 3, 6);
+      } else {
+        this.depthShadows.fillStyle(0x101722, 0.28).fillEllipse(px + 8, py + 14, 14, 5);
+      }
     }));
   }
 
@@ -144,7 +166,7 @@ export class WorldScene extends Phaser.Scene {
       padding: { x: 6, y: 3 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(101).setAlpha(0);
 
-    this.cameraBadge = this.add.text(12, 12, 'Mapa abierto · cámara 45° · WASD/Flechas para caminar', {
+    this.cameraBadge = this.add.text(12, 12, 'Mapa abierto · vista 3/4 · WASD/Flechas para caminar', {
       fontFamily: 'monospace',
       fontSize: '11px',
       color: '#f8efd0',

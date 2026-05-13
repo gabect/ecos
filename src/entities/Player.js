@@ -13,12 +13,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.facing = 'down';
   }
 
-  update(cursors, keys, cameraRotation = 0) {
-    const screenInput = new Phaser.Math.Vector2(0, 0);
+  update(cursors, keys) {
+    const input = new Phaser.Math.Vector2(0, 0);
     const left = keys.A ?? keys.a;
     const right = keys.D ?? keys.d;
     const up = keys.W ?? keys.w;
     const down = keys.S ?? keys.s;
+
+    if (cursors.left.isDown || left.isDown) input.x -= 1;
+    if (cursors.right.isDown || right.isDown) input.x += 1;
+    if (cursors.up.isDown || up.isDown) input.y -= 1;
+    if (cursors.down.isDown || down.isDown) input.y += 1;
 
     if (cursors.left.isDown || left.isDown) screenInput.x -= 1;
     if (cursors.right.isDown || right.isDown) screenInput.x += 1;
