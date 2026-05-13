@@ -1,5 +1,6 @@
 import { Player } from '../entities/Player.js';
 import { SaveManager } from '../systems/SaveManager.js';
+import { TouchControls } from '../systems/TouchControls.js';
 import { TILE_SIZE, TILES } from '../world/tiles.js';
 
 const INTERIORS = {
@@ -21,6 +22,7 @@ export class InteriorScene extends Phaser.Scene {
     this.createCamera();
     this.createHud();
     this.createInput();
+    this.createTouchControls();
     this.cameras.main.fadeIn(360, 12, 18, 28);
   }
 
@@ -92,10 +94,28 @@ export class InteriorScene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys('W,A,S,D,E,SPACE');
   }
 
+  createTouchControls() {
+    this.touchInput = new Phaser.Math.Vector2(0, 0);
+    this.touchInteractPressed = false;
+    this.touchControls = new TouchControls(this, {
+      onInteract: () => {
+        this.touchInteractPressed = true;
+      },
+    });
+    this.touchInput = this.touchControls.movementVector;
+  }
+
+  updateTouchControls() {
+    if (!this.touchInteractPressed) return;
+    this.touchInteractPressed = false;
+    this.inspect();
+  }
+
   update() {
-    this.player.update(this.cursors, this.keys);
+    this.player.update(this.cursors, this.keys, this.touchInput);
     this.player.setDepth(this.player.y);
     if (Phaser.Input.Keyboard.JustDown(this.keys.E) || Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.inspect();
+    this.updateTouchControls();
     if (this.player.y > 228 && Math.abs(this.player.x - 256) < 20) this.leave();
   }
 
