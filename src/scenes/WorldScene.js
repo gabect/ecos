@@ -27,7 +27,7 @@ export class WorldScene extends Phaser.Scene {
   createMap() {
     const layers = buildWorldLayers();
     this.map = this.make.tilemap({ data: layers.ground, tileWidth: TILE_SIZE, tileHeight: TILE_SIZE });
-    const tileset = this.map.addTilesetImage('liora-tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0, 0);
+    const tileset = this.map.addTilesetImage('world-tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0, 0);
     this.groundLayer = this.map.createLayer(0, tileset, 0, 0);
     this.detailLayer = this.map.createBlankLayer('detail', tileset, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.blockerLayer = this.map.createBlankLayer('blockers', tileset, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
@@ -49,7 +49,7 @@ export class WorldScene extends Phaser.Scene {
 
   createDepthShadows(layers) {
     this.depthShadows = this.add.graphics().setDepth(4).setAlpha(0.42);
-    const shadowTiles = new Set([TILES.tree, TILES.ruin, TILES.fence, TILES.wall, TILES.cliff, TILES.cliffTop]);
+    const shadowTiles = new Set([TILES.tree, TILES.stone, TILES.stoneBlock, TILES.fence, TILES.wall, TILES.cliff, TILES.cliffTop]);
 
     layers.blockers.forEach((row, y) => row.forEach((tile, x) => {
       if (!shadowTiles.has(tile)) return;
@@ -148,31 +148,29 @@ export class WorldScene extends Phaser.Scene {
   }
 
   createHud() {
-    this.dialogue = this.add.container(12, 218).setScrollFactor(0).setDepth(100).setAlpha(0);
-    const box = this.add.rectangle(0, 0, 488, 58, 0x182033, 0.92).setOrigin(0).setStrokeStyle(1, 0xf3d891, 0.9);
-    this.dialogueText = this.add.text(14, 12, '', {
-      fontFamily: 'Georgia, serif',
-      fontSize: '14px',
-      color: '#f8efd0',
-      wordWrap: { width: 458 },
-    });
-    this.dialogue.add([box, this.dialogueText]);
-
-    this.prompt = this.add.text(256, 250, 'E / Espacio: interactuar', {
+    this.prompt = this.add.text(256, 252, 'E / Space: Interact', {
       fontFamily: 'monospace',
-      fontSize: '12px',
+      fontSize: '11px',
       color: '#fff3ba',
       backgroundColor: '#192033cc',
       padding: { x: 6, y: 3 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(101).setAlpha(0);
 
-    this.cameraBadge = this.add.text(12, 12, 'Mapa abierto · vista 3/4 · WASD/Flechas para caminar', {
+    this.objectLabel = this.add.text(256, 226, '', {
       fontFamily: 'monospace',
       fontSize: '11px',
       color: '#f8efd0',
       backgroundColor: '#141b2dcc',
-      padding: { x: 6, y: 4 },
-    }).setScrollFactor(0).setDepth(101);
+      padding: { x: 6, y: 3 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(101).setAlpha(0);
+
+    this.controlHint = this.add.text(10, 266, 'WASD / Arrow Keys: Move', {
+      fontFamily: 'monospace',
+      fontSize: '10px',
+      color: '#f8efd0',
+      backgroundColor: '#141b2daa',
+      padding: { x: 5, y: 3 },
+    }).setScrollFactor(0).setDepth(101).setAlpha(0.82);
 
     this.minimap = this.add.graphics().setScrollFactor(0).setDepth(90);
   }
@@ -214,6 +212,8 @@ export class WorldScene extends Phaser.Scene {
     });
     this.nearestInteraction = nearest;
     this.prompt.setAlpha(nearest ? 1 : 0);
+    if (nearest) this.objectLabel.setText(nearest.label ?? 'Interact').setAlpha(1);
+    else this.objectLabel.setAlpha(0);
   }
 
   tryInteract() {
@@ -224,15 +224,13 @@ export class WorldScene extends Phaser.Scene {
       this.time.delayedCall(330, () => this.scene.start('InteriorScene', { interior: item.target, returnTo: { x: item.x, y: item.y + 1.5 } }));
       return;
     }
-    if (item.type === 'discovery') SaveManager.rememberDiscovery(item.id);
-    this.showDialogue(item.text);
+    this.flashObjectLabel(item.label ?? 'Interact');
   }
 
-  showDialogue(text) {
-    this.dialogueText.setText(text);
-    this.tweens.killTweensOf(this.dialogue);
-    this.dialogue.setAlpha(1);
-    this.time.delayedCall(3200, () => this.tweens.add({ targets: this.dialogue, alpha: 0, duration: 450 }));
+  flashObjectLabel(text) {
+    this.objectLabel.setText(text).setAlpha(1);
+    this.tweens.killTweensOf(this.objectLabel);
+    this.tweens.add({ targets: this.objectLabel, alpha: 0, delay: 650, duration: 220 });
   }
 
   drawMinimap() {
