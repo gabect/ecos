@@ -4,6 +4,8 @@ import { SaveManager } from '../systems/SaveManager.js';
 import { TILE_SIZE, TILES } from '../world/tiles.js';
 import { buildWorldLayers, interactions, WORLD_HEIGHT, WORLD_WIDTH } from '../world/worldData.js';
 
+const CAMERA_ROTATION = -Math.PI / 4;
+
 export class WorldScene extends Phaser.Scene {
   constructor() {
     super('WorldScene');
@@ -160,7 +162,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    this.player.update(this.cursors, this.keys);
+    this.player.update(this.cursors, this.keys, this.worldCamera?.rotation ?? 0);
+    this.player.setRotation(-(this.worldCamera?.rotation ?? 0));
     this.player.setDepth(this.player.y);
     this.updateAmbientAnimations(time);
     this.updateNearestInteraction();
