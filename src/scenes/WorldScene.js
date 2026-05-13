@@ -4,6 +4,8 @@ import { SaveManager } from '../systems/SaveManager.js';
 import { TILE_SIZE, TILES } from '../world/tiles.js';
 import { buildWorldLayers, interactions, WORLD_HEIGHT, WORLD_WIDTH } from '../world/worldData.js';
 
+const CAMERA_ROTATION = -Math.PI / 4;
+
 export class WorldScene extends Phaser.Scene {
   constructor() {
     super('WorldScene');
@@ -16,8 +18,8 @@ export class WorldScene extends Phaser.Scene {
     this.createAtmosphere();
     this.createPlayer(data);
     this.createInteractions();
-    this.createCamera();
     this.createHud();
+    this.createCamera();
     this.createInput();
     this.cameras.main.fadeIn(450, 12, 18, 28);
   }
@@ -57,11 +59,32 @@ export class WorldScene extends Phaser.Scene {
   }
 
   createCamera() {
-    const camera = this.cameras.main;
-    camera.setBounds(0, 0, WORLD_WIDTH * TILE_SIZE, WORLD_HEIGHT * TILE_SIZE);
-    camera.startFollow(this.player, true, 0.08, 0.08);
-    camera.setDeadzone(96, 56);
-    camera.setZoom(1);
+    const worldCamera = this.cameras.main;
+    worldCamera.setBounds(0, 0, WORLD_WIDTH * TILE_SIZE, WORLD_HEIGHT * TILE_SIZE);
+    worldCamera.startFollow(this.player, true, 0.08, 0.08);
+    worldCamera.setDeadzone(112, 72);
+    worldCamera.setZoom(1);
+    worldCamera.setRotation(CAMERA_ROTATION);
+
+    const uiCamera = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'UICamera');
+    const worldObjects = [
+      this.groundLayer,
+      this.detailLayer,
+      this.blockerLayer,
+      this.foregroundLayer,
+      this.player,
+      this.worldTint,
+      this.leaves,
+      this.waterOverlay,
+      ...this.interactables.map((item) => item.marker),
+      ...this.torches,
+    ].filter(Boolean);
+    const uiObjects = [this.dialogue, this.prompt, this.minimap, this.cameraBadge].filter(Boolean);
+
+    worldCamera.ignore(uiObjects);
+    uiCamera.ignore(worldObjects);
+    this.worldCamera = worldCamera;
+    this.uiCamera = uiCamera;
   }
 
   createInteractions() {
@@ -79,7 +102,7 @@ export class WorldScene extends Phaser.Scene {
   }
 
   createAtmosphere() {
-    this.add.rectangle(0, 0, WORLD_WIDTH * TILE_SIZE, WORLD_HEIGHT * TILE_SIZE, 0x172033, 0.18)
+    this.worldTint = this.add.rectangle(0, 0, WORLD_WIDTH * TILE_SIZE, WORLD_HEIGHT * TILE_SIZE, 0x172033, 0.18)
       .setOrigin(0)
       .setDepth(45)
       .setBlendMode(Phaser.BlendModes.MULTIPLY);
@@ -113,13 +136,21 @@ export class WorldScene extends Phaser.Scene {
     });
     this.dialogue.add([box, this.dialogueText]);
 
-    this.prompt = this.add.text(256, 250, 'E / Space: interact', {
+    this.prompt = this.add.text(256, 250, 'E / Espacio: interactuar', {
       fontFamily: 'monospace',
       fontSize: '12px',
       color: '#fff3ba',
       backgroundColor: '#192033cc',
       padding: { x: 6, y: 3 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(101).setAlpha(0);
+
+    this.cameraBadge = this.add.text(12, 12, 'Mapa abierto · cámara 45° · WASD/Flechas para caminar', {
+      fontFamily: 'monospace',
+      fontSize: '11px',
+      color: '#f8efd0',
+      backgroundColor: '#141b2dcc',
+      padding: { x: 6, y: 4 },
+    }).setScrollFactor(0).setDepth(101);
 
     this.minimap = this.add.graphics().setScrollFactor(0).setDepth(90);
   }
@@ -130,7 +161,8 @@ export class WorldScene extends Phaser.Scene {
   }
 
   update(time, delta) {
-    this.player.update(this.cursors, this.keys);
+    this.player.update(this.cursors, this.keys, this.worldCamera?.rotation ?? 0);
+    this.player.setRotation(-(this.worldCamera?.rotation ?? 0));
     this.player.setDepth(this.player.y);
     this.updateAmbientAnimations(time);
     this.updateNearestInteraction();

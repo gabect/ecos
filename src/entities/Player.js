@@ -4,27 +4,33 @@ const DRAG = 760;
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
-    super(scene, x, y, 'player', 1);
+    super(scene, x, y, 'player', 0);
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.body.setSize(10, 8).setOffset(3, 15);
+    this.body.setSize(11, 8).setOffset(4, 17);
     this.setDepth(20);
     this.facing = 'down';
   }
 
-  update(cursors, keys) {
-    const input = new Phaser.Math.Vector2(0, 0);
-    if (cursors.left.isDown || keys.a.isDown) input.x -= 1;
-    if (cursors.right.isDown || keys.d.isDown) input.x += 1;
-    if (cursors.up.isDown || keys.w.isDown) input.y -= 1;
-    if (cursors.down.isDown || keys.s.isDown) input.y += 1;
+  update(cursors, keys, cameraRotation = 0) {
+    const screenInput = new Phaser.Math.Vector2(0, 0);
+    const left = keys.A ?? keys.a;
+    const right = keys.D ?? keys.d;
+    const up = keys.W ?? keys.w;
+    const down = keys.S ?? keys.s;
 
-    if (input.lengthSq() > 0) {
-      input.normalize();
-      this.body.setAcceleration(input.x * ACCELERATION, input.y * ACCELERATION);
+    if (cursors.left.isDown || left.isDown) screenInput.x -= 1;
+    if (cursors.right.isDown || right.isDown) screenInput.x += 1;
+    if (cursors.up.isDown || up.isDown) screenInput.y -= 1;
+    if (cursors.down.isDown || down.isDown) screenInput.y += 1;
+
+    if (screenInput.lengthSq() > 0) {
+      screenInput.normalize();
+      const worldInput = screenInput.clone().rotate(-cameraRotation);
+      this.body.setAcceleration(worldInput.x * ACCELERATION, worldInput.y * ACCELERATION);
       this.body.setMaxVelocity(MAX_SPEED);
-      this.updateFacing(input);
+      this.updateFacing(screenInput);
       this.play(`walk-${this.facing}`, true);
     } else {
       this.body.setAcceleration(0, 0);
