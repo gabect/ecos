@@ -81,32 +81,13 @@ export class WorldScene extends Phaser.Scene {
   }
 
   createCamera() {
-    const worldCamera = this.cameras.main;
-    worldCamera.setBounds(0, 0, WORLD_WIDTH * TILE_SIZE, WORLD_HEIGHT * TILE_SIZE);
-    worldCamera.startFollow(this.player, true, 0.08, 0.08);
-    worldCamera.setDeadzone(112, 72);
-    worldCamera.setZoom(1);
-    worldCamera.setRotation(CAMERA_ROTATION);
-
-    const uiCamera = this.cameras.add(0, 0, this.scale.width, this.scale.height, false, 'UICamera');
-    const worldObjects = [
-      this.groundLayer,
-      this.detailLayer,
-      this.blockerLayer,
-      this.foregroundLayer,
-      this.player,
-      this.worldTint,
-      this.leaves,
-      this.waterOverlay,
-      ...this.interactables.map((item) => item.marker),
-      ...this.torches,
-    ].filter(Boolean);
-    const uiObjects = [this.dialogue, this.prompt, this.minimap, this.cameraBadge].filter(Boolean);
-
-    worldCamera.ignore(uiObjects);
-    uiCamera.ignore(worldObjects);
-    this.worldCamera = worldCamera;
-    this.uiCamera = uiCamera;
+    const camera = this.cameras.main;
+    camera.setBounds(0, 0, WORLD_WIDTH * TILE_SIZE, WORLD_HEIGHT * TILE_SIZE);
+    camera.startFollow(this.player, true, 0.08, 0.08);
+    camera.setDeadzone(96, 56);
+    camera.setZoom(1);
+    camera.rotation = 0;
+    this.worldCamera = camera;
   }
 
   createInteractions() {
