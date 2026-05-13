@@ -1,6 +1,7 @@
 import { Player } from '../entities/Player.js';
 import { AudioManager } from '../systems/AudioManager.js';
 import { SaveManager } from '../systems/SaveManager.js';
+import { TouchControls } from '../systems/TouchControls.js';
 import { TILE_SIZE, TILES } from '../world/tiles.js';
 import { buildWorldLayers, interactions, WORLD_HEIGHT, WORLD_WIDTH } from '../world/worldData.js';
 
@@ -21,6 +22,7 @@ export class WorldScene extends Phaser.Scene {
     this.createHud();
     this.createCamera();
     this.createInput();
+    this.createTouchControls();
     this.cameras.main.fadeIn(450, 12, 18, 28);
   }
 
@@ -161,14 +163,32 @@ export class WorldScene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys('W,A,S,D,E,SPACE');
   }
 
+  createTouchControls() {
+    this.touchInput = new Phaser.Math.Vector2(0, 0);
+    this.touchInteractPressed = false;
+    this.touchControls = new TouchControls(this, {
+      onInteract: () => {
+        this.touchInteractPressed = true;
+      },
+    });
+    this.touchInput = this.touchControls.movementVector;
+  }
+
+  updateTouchControls() {
+    if (!this.touchInteractPressed) return;
+    this.touchInteractPressed = false;
+    this.tryInteract();
+  }
+
   update(time, delta) {
-    this.player.update(this.cursors, this.keys, this.worldCamera?.rotation ?? 0);
+    this.player.update(this.cursors, this.keys, this.touchInput);
     this.player.setRotation(-(this.worldCamera?.rotation ?? 0));
     this.player.setDepth(this.player.y);
     this.updateAmbientAnimations(time);
     this.updateNearestInteraction();
     this.drawMinimap();
     if (Phaser.Input.Keyboard.JustDown(this.keys.E) || Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) this.tryInteract();
+    this.updateTouchControls();
   }
 
   updateAmbientAnimations(time) {
