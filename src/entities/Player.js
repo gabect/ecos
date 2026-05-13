@@ -29,7 +29,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       input.normalize();
       this.body.setAcceleration(input.x * ACCELERATION, input.y * ACCELERATION);
       this.body.setMaxVelocity(MAX_SPEED);
-      this.updateFacing(input);
+      this.updateFacing(screenInput);
       this.play(`walk-${this.facing}`, true);
     } else {
       this.body.setAcceleration(0, 0);
