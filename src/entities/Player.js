@@ -25,20 +25,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (cursors.up.isDown || up.isDown) input.y -= 1;
     if (cursors.down.isDown || down.isDown) input.y += 1;
 
-    if (cursors.left.isDown || left.isDown) input.x -= 1;
-    if (cursors.right.isDown || right.isDown) input.x += 1;
-    if (cursors.up.isDown || up.isDown) input.y -= 1;
-    if (cursors.down.isDown || down.isDown) input.y += 1;
-
-    if (cursors.left.isDown || left.isDown) screenInput.x -= 1;
-    if (cursors.right.isDown || right.isDown) screenInput.x += 1;
-    if (cursors.up.isDown || up.isDown) screenInput.y -= 1;
-    if (cursors.down.isDown || down.isDown) screenInput.y += 1;
-
-    if (screenInput.lengthSq() > 0) {
-      screenInput.normalize();
-      const worldInput = screenInput.clone().rotate(-cameraRotation);
-      this.body.setAcceleration(worldInput.x * ACCELERATION, worldInput.y * ACCELERATION);
+    if (input.lengthSq() > 0) {
+      input.normalize();
+      this.body.setAcceleration(input.x * ACCELERATION, input.y * ACCELERATION);
       this.body.setMaxVelocity(MAX_SPEED);
       this.updateFacing(screenInput);
       this.play(`walk-${this.facing}`, true);

@@ -27,7 +27,7 @@ export class WorldScene extends Phaser.Scene {
   createMap() {
     const layers = buildWorldLayers();
     this.map = this.make.tilemap({ data: layers.ground, tileWidth: TILE_SIZE, tileHeight: TILE_SIZE });
-    const tileset = this.map.addTilesetImage('world-tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0, 0);
+    const tileset = this.map.addTilesetImage('tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0, 0);
     this.groundLayer = this.map.createLayer(0, tileset, 0, 0);
     this.detailLayer = this.map.createBlankLayer('detail', tileset, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.blockerLayer = this.map.createBlankLayer('blockers', tileset, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);

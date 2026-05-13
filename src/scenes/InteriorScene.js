@@ -41,7 +41,7 @@ export class InteriorScene extends Phaser.Scene {
     floor[8][9] = TILES.rug;
 
     this.map = this.make.tilemap({ data: floor, tileWidth: TILE_SIZE, tileHeight: TILE_SIZE });
-    const tileset = this.map.addTilesetImage('world-tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0, 0);
+    const tileset = this.map.addTilesetImage('tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0, 0);
     this.map.createLayer(0, tileset, 96, 32);
     this.wallLayer = this.map.createBlankLayer('walls', tileset, 96, 32, width, height);
     walls.forEach((row, y) => row.forEach((tile, x) => {
