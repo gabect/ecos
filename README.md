@@ -1,6 +1,6 @@
 # Echoes of Liora
 
-A peaceful top-down 32-bit inspired exploration prototype built with HTML5, JavaScript, Phaser 3, and tilemap-driven world composition.
+A peaceful top-down 32-bit inspired exploration prototype built with HTML5, CSS3, JavaScript, Phaser 3, and tilemap-driven world composition. The outdoor map uses a classic top-down 3/4 adventure view with mostly horizontal/vertical terrain, depth from shadows and foreground layers, free walking, collision obstacles, and a custom animated hero with visible arm and foot motion.
 
 ## Run
 
@@ -14,7 +14,7 @@ Phaser 3 is loaded from the jsDelivr CDN in `index.html`, while all game code an
 
 ## Controls
 
-- Move: Arrow keys or WASD
+- Move freely through the open map: Arrow keys or WASD
 - Interact / inspect: E or Space
 - Enter houses from glowing door prompts
 - Leave interiors by walking through the bottom doorway
