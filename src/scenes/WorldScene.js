@@ -2,10 +2,11 @@ import { Player } from '../entities/Player.js';
 import { AudioManager } from '../systems/AudioManager.js';
 import { SaveManager } from '../systems/SaveManager.js';
 import { TouchControls } from '../systems/TouchControls.js';
-import { TILE_SIZE, TILES } from '../world/tiles.js';
+import { TILE_SCALE, TILE_SIZE, TILES } from '../world/tiles.js';
 import { buildWorldLayers, interactions, WORLD_HEIGHT, WORLD_WIDTH } from '../world/worldData.js';
 
 const CAMERA_ROTATION = -Math.PI / 4;
+const WORLD_HUD_DEPTH = 4000;
 
 export class WorldScene extends Phaser.Scene {
   constructor() {
@@ -59,13 +60,13 @@ export class WorldScene extends Phaser.Scene {
       const py = y * TILE_SIZE;
 
       if (tile === TILES.tree) {
-        this.depthShadows.fillStyle(0x101722, 0.42).fillEllipse(px + 9, py + 15, 17, 7);
+        this.depthShadows.fillStyle(0x101722, 0.42).fillEllipse(px + 9 * TILE_SCALE, py + 15 * TILE_SCALE, 17 * TILE_SCALE, 7 * TILE_SCALE);
       } else if (tile === TILES.wall) {
-        this.depthShadows.fillStyle(0x101722, 0.2).fillRect(px + 2, py + 13, TILE_SIZE, 5);
+        this.depthShadows.fillStyle(0x101722, 0.2).fillRect(px + 2 * TILE_SCALE, py + 13 * TILE_SCALE, TILE_SIZE, 5 * TILE_SCALE);
       } else if (tile === TILES.cliff || tile === TILES.cliffTop) {
-        this.depthShadows.fillStyle(0x101722, 0.18).fillRect(px + 1, py + 12, TILE_SIZE + 3, 6);
+        this.depthShadows.fillStyle(0x101722, 0.18).fillRect(px + TILE_SCALE, py + 12 * TILE_SCALE, TILE_SIZE + 3 * TILE_SCALE, 6 * TILE_SCALE);
       } else {
-        this.depthShadows.fillStyle(0x101722, 0.28).fillEllipse(px + 8, py + 14, 14, 5);
+        this.depthShadows.fillStyle(0x101722, 0.28).fillEllipse(px + 8 * TILE_SCALE, py + 14 * TILE_SCALE, 14 * TILE_SCALE, 5 * TILE_SCALE);
       }
     }));
   }
@@ -154,7 +155,7 @@ export class WorldScene extends Phaser.Scene {
       color: '#fff3ba',
       backgroundColor: '#192033cc',
       padding: { x: 6, y: 3 },
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(101).setAlpha(0);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(WORLD_HUD_DEPTH + 1).setAlpha(0);
 
     this.objectLabel = this.add.text(256, 226, '', {
       fontFamily: 'monospace',
@@ -162,7 +163,7 @@ export class WorldScene extends Phaser.Scene {
       color: '#f8efd0',
       backgroundColor: '#141b2dcc',
       padding: { x: 6, y: 3 },
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(101).setAlpha(0);
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(WORLD_HUD_DEPTH + 1).setAlpha(0);
 
     this.controlHint = this.add.text(10, 266, 'WASD / Arrow Keys: Move', {
       fontFamily: 'monospace',
@@ -170,9 +171,9 @@ export class WorldScene extends Phaser.Scene {
       color: '#f8efd0',
       backgroundColor: '#141b2daa',
       padding: { x: 5, y: 3 },
-    }).setScrollFactor(0).setDepth(101).setAlpha(0.82);
+    }).setScrollFactor(0).setDepth(WORLD_HUD_DEPTH + 1).setAlpha(0.82);
 
-    this.minimap = this.add.graphics().setScrollFactor(0).setDepth(90);
+    this.minimap = this.add.graphics().setScrollFactor(0).setDepth(WORLD_HUD_DEPTH);
   }
 
   createInput() {
@@ -238,8 +239,8 @@ export class WorldScene extends Phaser.Scene {
     let nearestDistance = Infinity;
     this.interactables.forEach((item) => {
       const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, item.x * TILE_SIZE, item.y * TILE_SIZE);
-      item.marker.setAlpha(distance < 38 ? 0.38 + Math.sin(this.time.now / 180) * 0.12 : 0);
-      if (distance < 34 && distance < nearestDistance) {
+      item.marker.setAlpha(distance < 38 * TILE_SCALE ? 0.38 + Math.sin(this.time.now / 180) * 0.12 : 0);
+      if (distance < 34 * TILE_SCALE && distance < nearestDistance) {
         nearest = item;
         nearestDistance = distance;
       }
