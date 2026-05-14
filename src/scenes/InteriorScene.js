@@ -1,7 +1,7 @@
 import { Player } from '../entities/Player.js';
 import { SaveManager } from '../systems/SaveManager.js';
 import { TouchControls } from '../systems/TouchControls.js';
-import { FLOOR_TILESET_KEY, TILE_SIZE, TILES } from '../world/tiles.js';
+import { TILESET_TEXTURE_KEY, TILE_SIZE, TILES } from '../world/tiles.js';
 
 const INTERIORS = {
   homeA: { tint: 0xf0b46b },
@@ -43,7 +43,7 @@ export class InteriorScene extends Phaser.Scene {
     floor[8][9] = TILES.rug;
 
     this.map = this.make.tilemap({ data: floor, tileWidth: TILE_SIZE, tileHeight: TILE_SIZE });
-    const tileset = this.map.addTilesetImage(FLOOR_TILESET_KEY, FLOOR_TILESET_KEY, TILE_SIZE, TILE_SIZE, 0, 0, 0);
+    const tileset = this.map.addTilesetImage(TILESET_TEXTURE_KEY, TILESET_TEXTURE_KEY, TILE_SIZE, TILE_SIZE, 0, 0, 0);
     this.map.createLayer(0, tileset, 96, 32);
     this.wallLayer = this.map.createBlankLayer('walls', tileset, 96, 32, width, height);
     walls.forEach((row, y) => row.forEach((tile, x) => {

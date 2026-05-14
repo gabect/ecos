@@ -2,7 +2,7 @@ import { Player } from '../entities/Player.js';
 import { AudioManager } from '../systems/AudioManager.js';
 import { SaveManager } from '../systems/SaveManager.js';
 import { TouchControls } from '../systems/TouchControls.js';
-import { FLOOR_TILESET_KEY, TILE_SIZE, TILES } from '../world/tiles.js';
+import { TILE_SIZE, TILES } from '../world/tiles.js';
 import { buildWorldLayers, interactions, WORLD_HEIGHT, WORLD_WIDTH } from '../world/worldData.js';
 
 const CAMERA_ROTATION = -Math.PI / 4;
@@ -29,7 +29,7 @@ export class WorldScene extends Phaser.Scene {
   createMap() {
     const layers = buildWorldLayers();
     this.map = this.make.tilemap({ data: layers.ground, tileWidth: TILE_SIZE, tileHeight: TILE_SIZE });
-    const tileset = this.map.addTilesetImage(FLOOR_TILESET_KEY, FLOOR_TILESET_KEY, TILE_SIZE, TILE_SIZE, 0, 0, 0);
+    const tileset = this.map.addTilesetImage('tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0, 0);
     this.groundLayer = this.map.createLayer(0, tileset, 0, 0);
     this.detailLayer = this.map.createBlankLayer('detail', tileset, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
     this.blockerLayer = this.map.createBlankLayer('blockers', tileset, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
