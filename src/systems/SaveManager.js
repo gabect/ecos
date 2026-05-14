@@ -1,4 +1,4 @@
-const SAVE_KEY = 'top-down-adventure-save-v1';
+const SAVE_KEY = 'top-down-adventure-save-v2';
 
 export class SaveManager {
   static load() {

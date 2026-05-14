@@ -1,4 +1,5 @@
-export const TILE_SIZE = 16;
+export const TILE_SIZE = 32;
+export const TILE_SCALE = TILE_SIZE / 16;
 export const FLOOR_SOURCE_KEY = 'floor-source';
 export const JUNGLE_FLOOR_KEY = 'jungle-floor';
 export const TILESET_TEXTURE_KEY = 'tiles';
@@ -159,8 +160,8 @@ function paintJungleFloorTile(ctx, image) {
     JUNGLE_FLOOR_SOURCE_SIZE,
     dx,
     dy,
-    TILE_SIZE,
-    TILE_SIZE,
+    JUNGLE_FLOOR_SOURCE_SIZE,
+    JUNGLE_FLOOR_SOURCE_SIZE,
   );
 }
 
@@ -199,6 +200,15 @@ function paintFallbackTileByIndex(ctx, index) {
   paintTile(ctx, x, y, tilePalette[index], index);
 }
 
+function scaledRect(ctx, tileX, tileY, x, y, width, height) {
+  ctx.fillRect(
+    tileX + x * TILE_SCALE,
+    tileY + y * TILE_SCALE,
+    width * TILE_SCALE,
+    height * TILE_SCALE,
+  );
+}
+
 function paintTile(ctx, x, y, colors, index) {
   const [base, hi, low] = colors;
   ctx.fillStyle = base;
@@ -206,61 +216,61 @@ function paintTile(ctx, x, y, colors, index) {
 
   if (index === TILES.grass || index === TILES.grassDark) {
     ctx.fillStyle = hi;
-    ctx.fillRect(x + 2, y + 3, 1, 3);
-    ctx.fillRect(x + 11, y + 8, 1, 4);
-    ctx.fillRect(x + 6, y + 13, 3, 1);
+    scaledRect(ctx, x, y, 2, 3, 1, 3);
+    scaledRect(ctx, x, y, 11, 8, 1, 4);
+    scaledRect(ctx, x, y, 6, 13, 3, 1);
     ctx.fillStyle = low;
-    ctx.fillRect(x + 4, y + 6, 1, 2);
-    ctx.fillRect(x + 13, y + 2, 1, 2);
-    ctx.fillRect(x + 1, y + 14, 5, 1);
+    scaledRect(ctx, x, y, 4, 6, 1, 2);
+    scaledRect(ctx, x, y, 13, 2, 1, 2);
+    scaledRect(ctx, x, y, 1, 14, 5, 1);
     return;
   }
 
   ctx.fillStyle = hi;
-  ctx.fillRect(x + 2, y + 2, 4, 2);
-  ctx.fillRect(x + 10, y + 9, 3, 2);
+  scaledRect(ctx, x, y, 2, 2, 4, 2);
+  scaledRect(ctx, x, y, 10, 9, 3, 2);
   ctx.fillStyle = low;
-  ctx.fillRect(x, y + 14, TILE_SIZE, 2);
+  scaledRect(ctx, x, y, 0, 14, 16, 2);
 
   if ([TILES.waterA, TILES.waterB].includes(index)) {
     ctx.fillStyle = low;
-    ctx.fillRect(x, y + 13, TILE_SIZE, 3);
+    scaledRect(ctx, x, y, 0, 13, 16, 3);
     ctx.fillStyle = hi;
-    ctx.fillRect(x + 1, y + 4, 8, 1);
-    ctx.fillRect(x + 6, y + 10, 9, 1);
-    ctx.fillRect(x + 3, y + 13, 4, 1);
+    scaledRect(ctx, x, y, 1, 4, 8, 1);
+    scaledRect(ctx, x, y, 6, 10, 9, 1);
+    scaledRect(ctx, x, y, 3, 13, 4, 1);
   }
 
   if (index === TILES.path || index === TILES.sand) {
     ctx.fillStyle = hi;
-    ctx.fillRect(x + 1, y + 1, 5, 1);
-    ctx.fillRect(x + 9, y + 4, 5, 1);
+    scaledRect(ctx, x, y, 1, 1, 5, 1);
+    scaledRect(ctx, x, y, 9, 4, 5, 1);
     ctx.fillStyle = low;
-    ctx.fillRect(x + 3, y + 6, 2, 2);
-    ctx.fillRect(x + 11, y + 12, 1, 1);
-    ctx.fillRect(x + 7, y + 9, 1, 1);
+    scaledRect(ctx, x, y, 3, 6, 2, 2);
+    scaledRect(ctx, x, y, 11, 12, 1, 1);
+    scaledRect(ctx, x, y, 7, 9, 1, 1);
   }
 
   if (index === TILES.treeTop || index === TILES.bush) {
     ctx.fillStyle = low;
-    ctx.fillRect(x + 1, y + 9, 14, 5);
-    ctx.fillRect(x + 4, y + 3, 9, 8);
+    scaledRect(ctx, x, y, 1, 9, 14, 5);
+    scaledRect(ctx, x, y, 4, 3, 9, 8);
     ctx.fillStyle = hi;
-    ctx.fillRect(x + 4, y + 1, 7, 4);
-    ctx.fillRect(x + 2, y + 6, 4, 3);
-    ctx.fillRect(x + 10, y + 6, 3, 2);
+    scaledRect(ctx, x, y, 4, 1, 7, 4);
+    scaledRect(ctx, x, y, 2, 6, 4, 3);
+    scaledRect(ctx, x, y, 10, 6, 3, 2);
   }
 
   if (index === TILES.roof) {
     ctx.fillStyle = low;
-    ctx.fillRect(x, y + 11, TILE_SIZE, 5);
+    scaledRect(ctx, x, y, 0, 11, 16, 5);
     ctx.fillStyle = hi;
-    for (let i = 0; i < TILE_SIZE; i += 4) ctx.fillRect(x + i, y + 2, 2, 10);
+    for (let i = 0; i < 16; i += 4) scaledRect(ctx, x, y, i, 2, 2, 10);
   }
 
   if (index === TILES.stoneBlock || index === TILES.stone) {
     ctx.fillStyle = low;
-    ctx.fillRect(x + 3, y + 4, 10, 1);
-    ctx.fillRect(x + 2, y + 10, 12, 1);
+    scaledRect(ctx, x, y, 3, 4, 10, 1);
+    scaledRect(ctx, x, y, 2, 10, 12, 1);
   }
 }
