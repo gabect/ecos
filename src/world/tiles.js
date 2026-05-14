@@ -115,8 +115,11 @@ export function createTileTexture(scene) {
   const ctx = canvas.getContext();
   ctx.imageSmoothingEnabled = false;
 
-  paintFallbackAtlas(ctx);
-  if (sourceImage) paintFloorTilesFromSource(ctx, sourceImage);
+  if (sourceImage) {
+    paintCleanTilesetFromSource(ctx, sourceImage);
+  } else {
+    paintFallbackAtlas(ctx);
+  }
 
   canvas.refresh();
 }

@@ -1,4 +1,4 @@
-import { createTileTexture } from '../world/tiles.js';
+import { FLOOR_SOURCE_KEY, createTileTexture } from '../world/tiles.js';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
