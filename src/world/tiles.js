@@ -1,8 +1,10 @@
 export const TILE_SIZE = 16;
 export const FLOOR_SOURCE_KEY = 'floor-source';
+export const JUNGLE_FLOOR_KEY = 'jungle-floor';
 export const TILESET_TEXTURE_KEY = 'tiles';
 
 const SOURCE_TILE_SIZE = 88;
+const JUNGLE_FLOOR_SOURCE_SIZE = 32;
 
 const SOURCE_COLS = [
   16, 112, 203, 295, 387, 481, 578, 669, 762, 855, 948, 1041, 1135,
@@ -66,7 +68,6 @@ const TILE_COLUMNS = 8;
 const TILE_COUNT = Object.keys(TILES).length;
 
 const FLOOR_SOURCE_TILE_BY_INDEX = {
-  [TILES.grass]: FLOOR_SOURCE_TILES.grass,
   [TILES.grassDark]: FLOOR_SOURCE_TILES.grassDark,
   [TILES.flowers]: FLOOR_SOURCE_TILES.flowers,
   [TILES.path]: FLOOR_SOURCE_TILES.path,
@@ -108,6 +109,7 @@ const tilePalette = {
 
 export function createTileTexture(scene) {
   const sourceImage = getLoadedFloorSourceImage(scene);
+  const jungleFloorImage = getLoadedJungleFloorImage(scene);
   if (scene.textures.exists(TILESET_TEXTURE_KEY)) scene.textures.remove(TILESET_TEXTURE_KEY);
 
   const rows = Math.ceil(TILE_COUNT / TILE_COLUMNS);
@@ -121,6 +123,8 @@ export function createTileTexture(scene) {
     paintFallbackAtlas(ctx);
   }
 
+  if (jungleFloorImage) paintJungleFloorTile(ctx, jungleFloorImage);
+
   canvas.refresh();
 }
 
@@ -129,6 +133,35 @@ function getLoadedFloorSourceImage(scene) {
   const image = scene.textures.get(FLOOR_SOURCE_KEY).getSourceImage();
   if (!image || !image.width || !image.height) return null;
   return image;
+}
+
+
+function getLoadedJungleFloorImage(scene) {
+  if (!scene.textures.exists(JUNGLE_FLOOR_KEY)) return null;
+  const image = scene.textures.get(JUNGLE_FLOOR_KEY).getSourceImage();
+  if (!image || image.width < JUNGLE_FLOOR_SOURCE_SIZE || image.height < JUNGLE_FLOOR_SOURCE_SIZE) return null;
+  return image;
+}
+
+function paintCleanTilesetFromSource(ctx, image) {
+  paintFallbackAtlas(ctx);
+  paintFloorTilesFromSource(ctx, image);
+}
+
+function paintJungleFloorTile(ctx, image) {
+  const dx = (TILES.grass % TILE_COLUMNS) * TILE_SIZE;
+  const dy = Math.floor(TILES.grass / TILE_COLUMNS) * TILE_SIZE;
+  ctx.drawImage(
+    image,
+    0,
+    0,
+    JUNGLE_FLOOR_SOURCE_SIZE,
+    JUNGLE_FLOOR_SOURCE_SIZE,
+    dx,
+    dy,
+    TILE_SIZE,
+    TILE_SIZE,
+  );
 }
 
 function paintFloorTilesFromSource(ctx, image) {
