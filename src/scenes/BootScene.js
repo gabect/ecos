@@ -6,7 +6,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('floor-source', 'assets/floor.png');
+    this.load.image(FLOOR_SOURCE_KEY, 'assets/floor.png');
+    this.load.image('jungle-floor', 'assets/junglefloor32x32.png');
     this.createPlayerSheet();
     this.createGlowTexture();
     this.createParticleTexture();
