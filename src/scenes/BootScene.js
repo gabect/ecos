@@ -1,4 +1,4 @@
-import { createTileTexture } from '../world/tiles.js';
+import { FLOOR_SOURCE_KEY, createTileTexture } from '../world/tiles.js';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -6,7 +6,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image('floor-tileset', 'assets/floor.png');
+    this.load.image(FLOOR_SOURCE_KEY, 'assets/floor.png');
     this.createPlayerSheet();
     this.createGlowTexture();
     this.createParticleTexture();

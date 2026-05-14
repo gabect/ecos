@@ -1,9 +1,10 @@
 export const TILE_SIZE = 16;
+export const FLOOR_SOURCE_KEY = 'floor-source';
 export const FLOOR_TILESET_KEY = 'floor-tileset';
 
-// The uploaded terrain sheet is a 16x16 pixel-art tileset with dark gutters.
-// Keep Phaser from sampling those gutters by copying source cells into this clean
-// runtime atlas before any tilemap binds the texture.
+// The uploaded floor sheet is a 16x16 tile source. It may contain dark gutters,
+// so production tilemaps bind to FLOOR_TILESET_KEY: a clean runtime atlas copied
+// from explicit source cells without color matching or generated terrain picks.
 export const FLOOR_TILESET_GRID = {
   tileWidth: TILE_SIZE,
   tileHeight: TILE_SIZE,
@@ -38,24 +39,41 @@ export const TILES = {
   torch: 23,
 };
 
+export const FLOOR_SOURCE_TILES = {
+  grass: { col: 0, row: 0 },
+  grassDark: { col: 1, row: 0 },
+  flowers: { col: 2, row: 0 },
+  path: { col: 0, row: 2 },
+  road: { col: 0, row: 5 },
+  waterA: { col: 0, row: 8 },
+  waterB: { col: 1, row: 8 },
+  sand: { col: 0, row: 6 },
+  cliff: { col: 0, row: 10 },
+  cliffTop: { col: 1, row: 10 },
+  stone: { col: 0, row: 11 },
+  stoneBlock: { col: 1, row: 11 },
+  bush: { col: 2, row: 1 },
+  groundDetail: { col: 2, row: 0 },
+};
+
 const TILE_COLUMNS = 8;
 const TILE_COUNT = Object.keys(TILES).length;
 
-const terrainTileTargets = {
-  [TILES.grass]: { color: [79, 159, 80], prefer: 'green' },
-  [TILES.grassDark]: { color: [63, 136, 71], prefer: 'green-dark' },
-  [TILES.flowers]: { color: [112, 174, 88], prefer: 'green-detail' },
-  [TILES.path]: { color: [185, 131, 82], prefer: 'dirt' },
-  [TILES.waterA]: { color: [45, 128, 189], prefer: 'water' },
-  [TILES.waterB]: { color: [35, 111, 174], prefer: 'water-dark' },
-  [TILES.sand]: { color: [216, 189, 118], prefer: 'sand' },
-  // TODO: If the source sheet has a dedicated bridge plank, pin this to that cell.
-  [TILES.bridge]: { color: [141, 86, 52], prefer: 'wood' },
-  [TILES.cliff]: { color: [114, 87, 74], prefer: 'rock-brown' },
-  [TILES.cliffTop]: { color: [127, 142, 86], prefer: 'rock-grass' },
-  [TILES.stone]: { color: [127, 135, 145], prefer: 'stone' },
-  [TILES.stoneBlock]: { color: [95, 102, 112], prefer: 'stone-dark' },
-  [TILES.cave]: { color: [36, 38, 50], prefer: 'cave' },
+const SOURCE_TILE_BY_INDEX = {
+  [TILES.grass]: FLOOR_SOURCE_TILES.grass,
+  [TILES.grassDark]: FLOOR_SOURCE_TILES.grassDark,
+  [TILES.flowers]: FLOOR_SOURCE_TILES.flowers,
+  [TILES.path]: FLOOR_SOURCE_TILES.path,
+  [TILES.waterA]: FLOOR_SOURCE_TILES.waterA,
+  [TILES.waterB]: FLOOR_SOURCE_TILES.waterB,
+  [TILES.sand]: FLOOR_SOURCE_TILES.sand,
+  [TILES.bridge]: FLOOR_SOURCE_TILES.road,
+  [TILES.cliff]: FLOOR_SOURCE_TILES.cliff,
+  [TILES.cliffTop]: FLOOR_SOURCE_TILES.cliffTop,
+  [TILES.stone]: FLOOR_SOURCE_TILES.stone,
+  [TILES.stoneBlock]: FLOOR_SOURCE_TILES.stoneBlock,
+  [TILES.bush]: FLOOR_SOURCE_TILES.bush,
+  [TILES.cave]: FLOOR_SOURCE_TILES.cliff,
 };
 
 const tilePalette = {
@@ -86,7 +104,7 @@ const tilePalette = {
 };
 
 export function createTileTexture(scene) {
-  const sourceImage = getLoadedFloorImage(scene);
+  const sourceImage = getLoadedFloorSourceImage(scene);
   if (scene.textures.exists(FLOOR_TILESET_KEY)) scene.textures.remove(FLOOR_TILESET_KEY);
 
   const rows = Math.ceil(TILE_COUNT / TILE_COLUMNS);
@@ -94,75 +112,53 @@ export function createTileTexture(scene) {
   const ctx = canvas.getContext();
   ctx.imageSmoothingEnabled = false;
 
-  paintFallbackAtlas(ctx);
-  if (sourceImage) paintFloorTilesFromSource(ctx, sourceImage);
+  if (sourceImage) {
+    paintCleanTilesetFromSource(ctx, sourceImage);
+  } else {
+    paintFallbackAtlas(ctx);
+  }
 
   canvas.refresh();
 }
 
-function getLoadedFloorImage(scene) {
-  if (!scene.textures.exists(FLOOR_TILESET_KEY)) return null;
-  const image = scene.textures.get(FLOOR_TILESET_KEY).getSourceImage();
+function getLoadedFloorSourceImage(scene) {
+  if (!scene.textures.exists(FLOOR_SOURCE_KEY)) return null;
+  const image = scene.textures.get(FLOOR_SOURCE_KEY).getSourceImage();
   if (!image || !image.width || !image.height) return null;
   return image;
 }
 
-function paintFallbackAtlas(ctx) {
-  Object.entries(tilePalette).forEach(([tileIndex, colors]) => {
+function paintCleanTilesetFromSource(ctx, image) {
+  Object.entries(SOURCE_TILE_BY_INDEX).forEach(([tileIndex, sourceTile]) => {
+    copySourceTile(ctx, image, Number(tileIndex), sourceTile);
+  });
+
+  // floor.png is the source of overworld terrain. Non-terrain props/interior
+  // placeholders remain generated so unchanged scenes still have visible tiles.
+  Object.keys(tilePalette).forEach((tileIndex) => {
     const index = Number(tileIndex);
-    const x = (index % TILE_COLUMNS) * TILE_SIZE;
-    const y = Math.floor(index / TILE_COLUMNS) * TILE_SIZE;
-    paintTile(ctx, x, y, colors, index);
+    if (SOURCE_TILE_BY_INDEX[index]) return;
+    paintFallbackTileByIndex(ctx, index);
   });
 }
 
-function paintFloorTilesFromSource(ctx, image) {
-  const sourceTiles = readSourceTiles(image);
-  if (!sourceTiles.length) return;
-
-  const used = new Set();
-  Object.entries(terrainTileTargets).forEach(([tileIndex, target]) => {
-    const tile = findClosestSourceTile(sourceTiles, target, used);
-    if (!tile) return;
-    used.add(tile.index);
-    const index = Number(tileIndex);
-    ctx.drawImage(
-      image,
-      tile.x,
-      tile.y,
-      TILE_SIZE,
-      TILE_SIZE,
-      (index % TILE_COLUMNS) * TILE_SIZE,
-      Math.floor(index / TILE_COLUMNS) * TILE_SIZE,
-      TILE_SIZE,
-      TILE_SIZE,
-    );
-  });
-}
-
-function readSourceTiles(image) {
+function copySourceTile(ctx, image, tileIndex, sourceTile) {
   const { margin, spacing } = resolveFloorGrid(image);
-  const columns = Math.floor((image.width - margin + spacing) / (TILE_SIZE + spacing));
-  const rows = Math.floor((image.height - margin + spacing) / (TILE_SIZE + spacing));
-  if (columns <= 0 || rows <= 0) return [];
+  const sx = margin + sourceTile.col * (TILE_SIZE + spacing);
+  const sy = margin + sourceTile.row * (TILE_SIZE + spacing);
+  if (sx + TILE_SIZE > image.width || sy + TILE_SIZE > image.height) return;
 
-  const sampleCanvas = document.createElement('canvas');
-  sampleCanvas.width = image.width;
-  sampleCanvas.height = image.height;
-  const sampleCtx = sampleCanvas.getContext('2d', { willReadFrequently: true });
-  sampleCtx.imageSmoothingEnabled = false;
-  sampleCtx.drawImage(image, 0, 0);
-
-  const tiles = [];
-  for (let y = 0; y < rows; y += 1) {
-    for (let x = 0; x < columns; x += 1) {
-      const sx = margin + x * (TILE_SIZE + spacing);
-      const sy = margin + y * (TILE_SIZE + spacing);
-      if (sx + TILE_SIZE > image.width || sy + TILE_SIZE > image.height) continue;
-      tiles.push({ index: y * columns + x, x: sx, y: sy, color: averageTileColor(sampleCtx, sx, sy) });
-    }
-  }
-  return tiles;
+  ctx.drawImage(
+    image,
+    sx,
+    sy,
+    TILE_SIZE,
+    TILE_SIZE,
+    (tileIndex % TILE_COLUMNS) * TILE_SIZE,
+    Math.floor(tileIndex / TILE_COLUMNS) * TILE_SIZE,
+    TILE_SIZE,
+    TILE_SIZE,
+  );
 }
 
 function resolveFloorGrid(image) {
@@ -187,53 +183,14 @@ function fitsGrid(image, margin, spacing) {
   return (usableW + spacing) % (TILE_SIZE + spacing) === 0 && (usableH + spacing) % (TILE_SIZE + spacing) === 0;
 }
 
-function averageTileColor(ctx, x, y) {
-  const data = ctx.getImageData(x, y, TILE_SIZE, TILE_SIZE).data;
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  let count = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    const alpha = data[i + 3];
-    const sum = data[i] + data[i + 1] + data[i + 2];
-    if (alpha < 32 || sum < 72) continue;
-    r += data[i];
-    g += data[i + 1];
-    b += data[i + 2];
-    count += 1;
-  }
-  if (!count) return [0, 0, 0];
-  return [r / count, g / count, b / count];
+function paintFallbackAtlas(ctx) {
+  Object.keys(tilePalette).forEach((tileIndex) => paintFallbackTileByIndex(ctx, Number(tileIndex)));
 }
 
-function findClosestSourceTile(tiles, target, used) {
-  return tiles
-    .filter((tile) => !used.has(tile.index))
-    .map((tile) => ({ tile, score: colorDistance(tile.color, target.color) - preferenceBonus(tile.color, target.prefer) }))
-    .sort((a, b) => a.score - b.score)[0]?.tile;
-}
-
-function colorDistance(a, b) {
-  return ((a[0] - b[0]) ** 2) + ((a[1] - b[1]) ** 2) + ((a[2] - b[2]) ** 2);
-}
-
-function preferenceBonus(color, prefer) {
-  const [r, g, b] = color;
-  const saturation = Math.max(r, g, b) - Math.min(r, g, b);
-  if (prefer === 'green' && g > r && g > b) return 2400;
-  if (prefer === 'green-dark' && g > r && g > b && g < 150) return 3200;
-  if (prefer === 'green-detail' && g > r && saturation > 35) return 1400;
-  if (prefer === 'water' && b > r && b >= g) return 3200;
-  if (prefer === 'water-dark' && b > r && b >= g && b < 190) return 3800;
-  if (prefer === 'sand' && r > b && g > b && Math.abs(r - g) < 70) return 2600;
-  if (prefer === 'dirt' && r > g && g > b) return 2200;
-  if (prefer === 'wood' && r > g && g > b && r < 170) return 1500;
-  if (prefer === 'stone' && saturation < 45 && r > 70) return 2600;
-  if (prefer === 'stone-dark' && saturation < 45 && r < 130) return 2800;
-  if (prefer === 'rock-brown' && r >= g && g >= b && saturation < 70) return 1800;
-  if (prefer === 'rock-grass' && g >= r && r >= b) return 1600;
-  if (prefer === 'cave' && r < 70 && g < 70 && b < 85) return 4200;
-  return 0;
+function paintFallbackTileByIndex(ctx, index) {
+  const x = (index % TILE_COLUMNS) * TILE_SIZE;
+  const y = Math.floor(index / TILE_COLUMNS) * TILE_SIZE;
+  paintTile(ctx, x, y, tilePalette[index], index);
 }
 
 function paintTile(ctx, x, y, colors, index) {
