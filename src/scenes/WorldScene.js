@@ -72,14 +72,24 @@ export class WorldScene extends Phaser.Scene {
 
   createPlayer(data) {
     const save = SaveManager.load();
-    const start = data.fromInterior ? data.exit ?? { x: 48.5, y: 30 } : save?.player ?? { x: 36, y: 39 };
+    const start = this.resolveStartPosition(data, save);
+    this.physics.world.setBounds(0, 0, WORLD_WIDTH * TILE_SIZE, WORLD_HEIGHT * TILE_SIZE);
     this.player = new Player(this, start.x * TILE_SIZE, start.y * TILE_SIZE);
+    this.player.body.setCollideWorldBounds(true);
     this.physics.add.collider(this.player, this.blockerLayer);
     this.time.addEvent({
       delay: 1200,
       loop: true,
       callback: () => SaveManager.save({ scene: 'WorldScene', player: { x: this.player.x / TILE_SIZE, y: this.player.y / TILE_SIZE } }),
     });
+  }
+
+  resolveStartPosition(data, save) {
+    const requested = data.fromInterior ? data.exit ?? { x: 48.5, y: 30 } : save?.player ?? { x: 36, y: 39 };
+    const fallback = { x: 36, y: 39 };
+    const x = Number.isFinite(requested.x) ? Phaser.Math.Clamp(requested.x, 1, WORLD_WIDTH - 2) : fallback.x;
+    const y = Number.isFinite(requested.y) ? Phaser.Math.Clamp(requested.y, 1, WORLD_HEIGHT - 2) : fallback.y;
+    return { x, y };
   }
 
   createCamera() {
@@ -123,11 +133,18 @@ export class WorldScene extends Phaser.Scene {
       alpha: { start: 0.45, end: 0 },
     }).setDepth(60);
 
-    this.waterOverlay = this.add.tileSprite(18 * TILE_SIZE, 43 * TILE_SIZE, 22 * TILE_SIZE, 14 * TILE_SIZE, 'interact-glow')
+    this.waterOverlays = [
+      this.add.tileSprite(18 * TILE_SIZE, 43 * TILE_SIZE, 22 * TILE_SIZE, 14 * TILE_SIZE, 'interact-glow'),
+      this.add.tileSprite(88 * TILE_SIZE, 106 * TILE_SIZE, 112 * TILE_SIZE, 18 * TILE_SIZE, 'interact-glow'),
+      this.add.tileSprite(198 * TILE_SIZE, 128 * TILE_SIZE, 34 * TILE_SIZE, 19 * TILE_SIZE, 'interact-glow'),
+      this.add.tileSprite(132 * TILE_SIZE, 184 * TILE_SIZE, 260 * TILE_SIZE, 10 * TILE_SIZE, 'interact-glow'),
+    ];
+
+    this.waterOverlays.forEach((overlay) => overlay
       .setTint(0x68d7ff)
       .setAlpha(0.08)
       .setDepth(3)
-      .setBlendMode(Phaser.BlendModes.ADD);
+      .setBlendMode(Phaser.BlendModes.ADD));
   }
 
   createHud() {
@@ -182,6 +199,7 @@ export class WorldScene extends Phaser.Scene {
 
   update(time, delta) {
     this.player.update(this.cursors, this.keys, this.touchInput);
+    this.enforcePlayerWorldBounds();
     this.player.setRotation(-(this.worldCamera?.rotation ?? 0));
     this.player.setDepth(this.player.y);
     this.updateAmbientAnimations(time);
@@ -191,9 +209,24 @@ export class WorldScene extends Phaser.Scene {
     this.updateTouchControls();
   }
 
+  enforcePlayerWorldBounds() {
+    const min = TILE_SIZE * 0.5;
+    const maxX = WORLD_WIDTH * TILE_SIZE - min;
+    const maxY = WORLD_HEIGHT * TILE_SIZE - min;
+    const clampedX = Phaser.Math.Clamp(this.player.x, min, maxX);
+    const clampedY = Phaser.Math.Clamp(this.player.y, min, maxY);
+
+    if (clampedX !== this.player.x || clampedY !== this.player.y) {
+      this.player.setPosition(clampedX, clampedY);
+      this.player.body.setVelocity(0, 0);
+    }
+  }
+
   updateAmbientAnimations(time) {
-    this.waterOverlay.tilePositionX = time * 0.012;
-    this.waterOverlay.tilePositionY = Math.sin(time / 700) * 4;
+    this.waterOverlays.forEach((overlay, index) => {
+      overlay.tilePositionX = time * (0.01 + index * 0.002);
+      overlay.tilePositionY = Math.sin(time / 700 + index) * 4;
+    });
     this.detailLayer.forEachTile((tile) => {
       if (tile.index === TILES.flowers && (tile.x + tile.y + Math.floor(time / 550)) % 8 === 0) tile.alpha = 0.72;
       else if (tile.index === TILES.flowers) tile.alpha = 1;
@@ -236,12 +269,31 @@ export class WorldScene extends Phaser.Scene {
 
   drawMinimap() {
     const g = this.minimap.clear();
-    const x = 420;
+    const mapW = 84;
+    const mapH = Math.round(mapW * (WORLD_HEIGHT / WORLD_WIDTH));
+    const x = this.scale.gameSize.width - mapW - 12;
     const y = 12;
-    g.fillStyle(0x121826, 0.72).fillRoundedRect(x - 4, y - 4, 80, 60, 5);
-    g.fillStyle(0x4e9f50, 0.88).fillRect(x, y, 70, 50);
-    g.fillStyle(0x2f80c8, 0.95).fillEllipse(x + 14, y + 34, 20, 12);
-    g.fillStyle(0xb68a56, 0.95).fillRect(x + 32, y + 20, 22, 3);
-    g.fillStyle(0xefd36d, 1).fillCircle(x + (this.player.x / (WORLD_WIDTH * TILE_SIZE)) * 70, y + (this.player.y / (WORLD_HEIGHT * TILE_SIZE)) * 50, 2);
+    const sx = (tileX) => x + (tileX / WORLD_WIDTH) * mapW;
+    const sy = (tileY) => y + (tileY / WORLD_HEIGHT) * mapH;
+
+    g.fillStyle(0x121826, 0.72).fillRoundedRect(x - 4, y - 4, mapW + 8, mapH + 8, 5);
+    g.fillStyle(0x4e9f50, 0.88).fillRect(x, y, mapW, mapH);
+    g.fillStyle(0x2f5f35, 0.92).fillRect(x, y, mapW, 3);
+    g.fillRect(x, y, 3, mapH);
+    g.fillStyle(0x79624d, 0.92).fillRect(x + mapW - 3, y, 3, mapH);
+    g.fillStyle(0x2f80c8, 0.92).fillRect(x, y + mapH - 4, mapW, 4);
+    g.fillStyle(0x2f80c8, 0.9).fillEllipse(sx(18), sy(43), 9, 7);
+    g.fillEllipse(sx(198), sy(128), 11, 7);
+    g.fillStyle(0x2f80c8, 0.82).lineStyle(2, 0x2f80c8, 0.82);
+    g.beginPath();
+    g.moveTo(sx(7), sy(111));
+    [[48, 104], [96, 101], [142, 92], [163, 127], [214, 132], [256, 149]].forEach(([px, py]) => g.lineTo(sx(px), sy(py)));
+    g.strokePath();
+    g.lineStyle(1, 0xb68a56, 0.95);
+    g.beginPath();
+    g.moveTo(sx(36), sy(39));
+    [[76, 63], [125, 77], [176, 94], [198, 111]].forEach(([px, py]) => g.lineTo(sx(px), sy(py)));
+    g.strokePath();
+    g.fillStyle(0xefd36d, 1).fillCircle(x + (this.player.x / (WORLD_WIDTH * TILE_SIZE)) * mapW, y + (this.player.y / (WORLD_HEIGHT * TILE_SIZE)) * mapH, 2);
   }
 }

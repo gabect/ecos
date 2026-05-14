@@ -1,7 +1,7 @@
 import { TILES } from './tiles.js';
 
-export const WORLD_WIDTH = 88;
-export const WORLD_HEIGHT = 62;
+export const WORLD_WIDTH = 264;
+export const WORLD_HEIGHT = 186;
 
 const fill = (value) => Array.from({ length: WORLD_HEIGHT }, () => Array(WORLD_WIDTH).fill(value));
 const inBounds = (layer, x, y) => layer[y] && layer[y][x] !== undefined;
@@ -48,9 +48,17 @@ export function buildWorldLayers() {
   paintCliffs(ground, blockers, detail);
   paintCamp(ground, blockers, foreground, detail);
   paintClearings(ground, detail, blockers);
-  paintForest(detail, blockers, foreground);
+  paintExpandedWaterAndShore(ground, detail);
+  paintExpandedPaths(ground, detail);
+  paintExpandedSettlements(ground, blockers, foreground, detail);
+  paintExpandedRuins(ground, blockers, detail);
+  paintExpandedClearings(ground, detail, blockers);
+  paintForest(ground, detail, blockers, foreground);
   paintRocksAndBushes(detail, blockers);
+  paintExpandedRocksAndBushes(detail, blockers);
   addWaterCollision(ground, blockers);
+  paintWorldBoundaries(ground, detail, blockers, foreground);
+  sealWorldBounds(ground, blockers);
 
   return { ground, detail, blockers, foreground };
 }
@@ -118,8 +126,11 @@ function paintCamp(ground, blockers, foreground, detail) {
   addHouse(ground, blockers, foreground, 47, 32, 7, 6);
   rect(detail, 41, 28, 24, 1, TILES.fence);
   rect(blockers, 41, 28, 24, 1, TILES.fence);
-  rect(detail, 48, 29, 2, 1, -1);
-  rect(blockers, 48, 28, 2, 1, -1);
+  [[46, 25], [59, 28], [50, 37]].forEach(([doorX, doorY]) => {
+    rect(detail, doorX - 1, 28, 3, 1, -1);
+    rect(blockers, doorX - 1, 28, 3, 1, -1);
+    setTile(blockers, doorX, doorY, -1);
+  });
 
   [[42, 31], [45, 30], [54, 31], [61, 31], [52, 24], [57, 21]].forEach(([x, y]) => setTile(detail, x, y, TILES.bush));
   [[45, 27], [53, 29], [59, 30], [50, 39]].forEach(([x, y]) => setTile(detail, x, y, TILES.flowers));
@@ -139,13 +150,99 @@ function paintClearings(ground, detail, blockers) {
 }
 
 
-function paintForest(detail, blockers, foreground) {
+function paintExpandedWaterAndShore(ground, detail) {
+  curvedPath(ground, [[7, 111], [26, 106], [48, 103], [70, 96], [96, 100], [119, 93], [142, 91]], 4, TILES.sand);
+  curvedPath(ground, [[4, 111], [25, 107], [48, 104], [70, 97], [96, 101], [119, 94], [142, 92]], 2, TILES.waterA);
+  curvedPath(ground, [[46, 108], [70, 114], [92, 123], [116, 127], [140, 122], [163, 127]], 2, TILES.waterB);
+  rect(ground, 83, 96, 8, 3, TILES.bridge);
+  rect(ground, 132, 89, 7, 3, TILES.bridge);
+  rect(ground, 104, 123, 8, 3, TILES.bridge);
+
+  ellipse(ground, 198, 128, 20, 12, TILES.sand);
+  ellipse(ground, 198, 128, 16, 9, TILES.waterA);
+  ellipse(ground, 206, 124, 8, 5, TILES.waterB);
+  curvedPath(ground, [[214, 132], [226, 140], [240, 146], [256, 149]], 2, TILES.waterA);
+
+  [[57, 101], [76, 94], [120, 90], [151, 126], [188, 117], [217, 133], [235, 143]].forEach(([x, y]) => {
+    setTile(detail, x, y, TILES.stone);
+    setTile(detail, x + 2, y + 1, TILES.flowers);
+  });
+}
+
+function paintExpandedPaths(ground, detail) {
+  curvedPath(ground, [[36, 39], [54, 55], [76, 63], [100, 73], [125, 77], [151, 88], [176, 94], [198, 111]], 1, TILES.path);
+  curvedPath(ground, [[100, 73], [96, 90], [90, 105], [82, 121], [74, 142], [64, 166]], 1, TILES.path);
+  curvedPath(ground, [[125, 77], [133, 58], [151, 45], [176, 39], [205, 43], [228, 38]], 1, TILES.path);
+  curvedPath(ground, [[151, 88], [150, 106], [160, 123], [177, 137], [198, 143], [222, 151]], 1, TILES.path);
+  curvedPath(ground, [[76, 63], [56, 81], [42, 98], [32, 120]], 0, TILES.path);
+  curvedPath(ground, [[176, 94], [199, 84], [220, 72], [239, 58]], 0, TILES.path);
+
+  [[58, 57], [82, 65], [111, 75], [142, 84], [167, 92], [93, 104], [73, 145], [152, 46], [205, 43], [185, 139]].forEach(([x, y]) => {
+    setTile(detail, x, y - 1, TILES.flowers);
+    setTile(detail, x + 1, y + 1, TILES.stone);
+  });
+}
+
+function paintExpandedSettlements(ground, blockers, foreground, detail) {
+  ellipse(ground, 126, 78, 20, 12, TILES.grassDark);
+  addHouse(ground, blockers, foreground, 113, 68, 8, 6);
+  addHouse(ground, blockers, foreground, 127, 70, 8, 6);
+  addHouse(ground, blockers, foreground, 139, 80, 7, 6);
+  rect(detail, 110, 84, 36, 1, TILES.fence);
+  rect(blockers, 110, 84, 36, 1, TILES.fence);
+  rect(detail, 123, 84, 3, 1, -1);
+  rect(blockers, 123, 84, 3, 1, -1);
+  [[112, 79], [121, 82], [134, 78], [145, 87], [129, 65]].forEach(([x, y]) => setTile(detail, x, y, TILES.bush));
+
+  ellipse(ground, 66, 166, 14, 9, TILES.grassDark);
+  addHouse(ground, blockers, foreground, 56, 158, 7, 6);
+  addHouse(ground, blockers, foreground, 70, 161, 8, 6);
+  [[62, 169], [68, 156], [78, 170], [54, 167]].forEach(([x, y]) => setTile(detail, x, y, TILES.flowers));
+}
+
+function paintExpandedRuins(ground, blockers, detail) {
+  ellipse(ground, 207, 55, 22, 13, TILES.grassDark);
+  rect(detail, 197, 48, 5, 1, TILES.stoneBlock);
+  rect(detail, 196, 49, 1, 7, TILES.stoneBlock);
+  rect(detail, 213, 48, 1, 7, TILES.stoneBlock);
+  rect(detail, 201, 60, 10, 1, TILES.stoneBlock);
+  rect(blockers, 197, 48, 5, 1, TILES.stoneBlock);
+  rect(blockers, 196, 49, 1, 7, TILES.stoneBlock);
+  rect(blockers, 213, 48, 1, 7, TILES.stoneBlock);
+  rect(blockers, 201, 60, 10, 1, TILES.stoneBlock);
+  rect(ground, 226, 34, 7, 5, TILES.cave);
+  rect(blockers, 226, 34, 7, 5, TILES.cave);
+  rect(blockers, 229, 37, 2, 1, -1);
+  [[202, 53], [207, 50], [211, 57], [219, 62], [224, 44], [235, 40]].forEach(([x, y]) => {
+    setTile(detail, x, y, TILES.stone);
+    setTile(blockers, x, y, TILES.stone);
+  });
+}
+
+function paintExpandedClearings(ground, detail, blockers) {
+  [[44, 84, 11, 7], [96, 146, 14, 8], [164, 31, 14, 7], [178, 118, 18, 9], [235, 90, 12, 7]].forEach(([x, y, rx, ry]) => {
+    ellipse(ground, x, y, rx, ry, TILES.grassDark);
+  });
+  [[42, 84], [46, 82], [91, 148], [100, 143], [162, 28], [170, 34], [181, 117], [234, 92]].forEach(([x, y]) => setTile(detail, x, y, TILES.flowers));
+  [[98, 146], [181, 121], [237, 88]].forEach(([x, y]) => {
+    setTile(detail, x, y, TILES.stone);
+    setTile(blockers, x, y, TILES.stone);
+  });
+}
+
+function paintForest(ground, detail, blockers, foreground) {
   const trees = [
     [4, 8, 12, 18, 2], [18, 5, 18, 8, 3], [2, 28, 13, 18, 2], [20, 28, 8, 8, 2],
     [4, 52, 28, 8, 3], [55, 42, 26, 14, 2], [68, 36, 15, 20, 2], [38, 48, 18, 10, 3],
     [0, 4, 5, 56, 2], [83, 34, 5, 28, 2], [8, 20, 8, 7, 3], [30, 6, 14, 6, 3],
   ];
-  trees.forEach(([x, y, w, h, spacing]) => scatterTrees(detail, blockers, foreground, x, y, w, h, spacing));
+  trees.forEach(([x, y, w, h, spacing]) => scatterTrees(ground, detail, blockers, foreground, x, y, w, h, spacing));
+
+  const groves = [
+    [46, 86, 28, 18, 3], [78, 110, 34, 24, 4], [122, 24, 40, 20, 4], [150, 136, 42, 28, 4],
+    [184, 84, 36, 24, 3], [206, 124, 28, 18, 3], [26, 132, 34, 22, 3], [96, 150, 28, 18, 4],
+  ];
+  groves.forEach(([cx, cy, rx, ry, spacing]) => scatterOrganicTrees(ground, detail, blockers, foreground, cx, cy, rx, ry, spacing));
 }
 
 function paintRocksAndBushes(detail, blockers) {
@@ -160,6 +257,71 @@ function paintRocksAndBushes(detail, blockers) {
     setTile(detail, x, y, TILES.stone);
     setTile(blockers, x, y, TILES.stone);
   });
+}
+
+function paintExpandedRocksAndBushes(detail, blockers) {
+  const bushes = [
+    [52, 61], [70, 67], [89, 77], [106, 83], [151, 92], [168, 98], [192, 109], [214, 116],
+    [41, 126], [72, 151], [85, 162], [120, 132], [159, 139], [207, 148], [230, 154], [242, 68],
+  ];
+  bushes.forEach(([x, y]) => setTile(detail, x, y, TILES.bush));
+
+  const rocks = [[74, 93], [116, 96], [143, 115], [182, 102], [191, 136], [220, 139], [51, 143], [105, 154], [157, 31], [239, 53]];
+  rocks.forEach(([x, y]) => {
+    setTile(detail, x, y, TILES.stone);
+    setTile(blockers, x, y, TILES.stone);
+  });
+}
+
+function paintWorldBoundaries(ground, detail, blockers, foreground) {
+  for (let x = 0; x < WORLD_WIDTH; x += 1) {
+    const northDepth = 5 + Math.floor(Math.sin(x * 0.11) * 2 + Math.cos(x * 0.037) * 2);
+    const southDepth = 7 + Math.floor(Math.sin(x * 0.08) * 2 + Math.cos(x * 0.051) * 2);
+    for (let y = 0; y <= northDepth; y += 1) {
+      const tile = y < northDepth - 1 ? TILES.cliffTop : TILES.cliff;
+      setTile(ground, x, y, tile);
+      setTile(blockers, x, y, tile);
+      if (y === northDepth && (x * 13 + y * 5) % 7 === 0) setTile(detail, x, y + 1, TILES.stone);
+    }
+    for (let y = WORLD_HEIGHT - southDepth; y < WORLD_HEIGHT; y += 1) {
+      const tile = y === WORLD_HEIGHT - southDepth ? TILES.sand : ((x + y) % 5 === 0 ? TILES.waterB : TILES.waterA);
+      setTile(ground, x, y, tile);
+      setTile(blockers, x, y, tile);
+    }
+  }
+
+  for (let y = 0; y < WORLD_HEIGHT; y += 1) {
+    const westDepth = 6 + Math.floor(Math.sin(y * 0.13) * 2 + Math.cos(y * 0.043) * 2);
+    const eastDepth = 7 + Math.floor(Math.sin(y * 0.1) * 2 + Math.cos(y * 0.033) * 2);
+    for (let x = 0; x <= westDepth; x += 1) {
+      setTile(ground, x, y, TILES.grassDark);
+      if ((x + y) % 3 === 0 || x < westDepth - 2) {
+        setTile(detail, x, y, TILES.tree);
+        setTile(foreground, x, Math.max(0, y - 1), TILES.treeTop);
+        setTile(blockers, x, y, TILES.tree);
+      } else {
+        setTile(detail, x, y, TILES.bush);
+        setTile(blockers, x, y, TILES.bush);
+      }
+    }
+    for (let x = WORLD_WIDTH - eastDepth; x < WORLD_WIDTH; x += 1) {
+      const tile = x < WORLD_WIDTH - eastDepth + 3 ? TILES.cliff : TILES.cliffTop;
+      setTile(ground, x, y, tile);
+      setTile(blockers, x, y, tile);
+      if ((x * 3 + y) % 13 === 0) setTile(detail, x - 1, y, TILES.stone);
+    }
+  }
+}
+
+function sealWorldBounds(ground, blockers) {
+  for (let x = 0; x < WORLD_WIDTH; x += 1) {
+    setTile(blockers, x, 0, ground[0][x] === TILES.waterA ? TILES.waterA : TILES.cliffTop);
+    setTile(blockers, x, WORLD_HEIGHT - 1, ground[WORLD_HEIGHT - 1][x] === TILES.waterB ? TILES.waterB : ground[WORLD_HEIGHT - 1][x]);
+  }
+  for (let y = 0; y < WORLD_HEIGHT; y += 1) {
+    setTile(blockers, 0, y, ground[y][0] === TILES.tree ? TILES.tree : ground[y][0]);
+    setTile(blockers, WORLD_WIDTH - 1, y, ground[y][WORLD_WIDTH - 1]);
+  }
 }
 
 function addWaterCollision(ground, blockers) {
@@ -179,14 +341,36 @@ function addHouse(ground, blockers, foreground, x, y, w, h) {
   blockers[y + h - 1][x + Math.floor(w / 2)] = -1;
 }
 
-function scatterTrees(detail, blockers, foreground, x, y, w, h, spacing = 2) {
+function canPlaceTree(ground, blockers, x, y) {
+  if (!ground[y] || ground[y][x] === undefined) return false;
+  if (blockers[y][x] >= 0) return false;
+  return ![TILES.path, TILES.bridge, TILES.waterA, TILES.waterB, TILES.sand, TILES.door, TILES.wall, TILES.cliff, TILES.cliffTop].includes(ground[y][x]);
+}
+
+function placeTree(ground, detail, blockers, foreground, x, y) {
+  if (!canPlaceTree(ground, blockers, x, y)) return;
+  detail[y][x] = TILES.tree;
+  foreground[Math.max(0, y - 1)][x] = TILES.treeTop;
+  blockers[y][x] = TILES.tree;
+}
+
+function scatterTrees(ground, detail, blockers, foreground, x, y, w, h, spacing = 2) {
   for (let yy = y; yy < y + h; yy += spacing) {
     for (let xx = x; xx < x + w; xx += spacing) {
       if ((xx * 5 + yy * 9) % 5 === 0) continue;
-      if (!detail[yy] || detail[yy][xx] === undefined) continue;
-      detail[yy][xx] = TILES.tree;
-      foreground[Math.max(0, yy - 1)][xx] = TILES.treeTop;
-      blockers[yy][xx] = TILES.tree;
+      placeTree(ground, detail, blockers, foreground, xx, yy);
+    }
+  }
+}
+
+function scatterOrganicTrees(ground, detail, blockers, foreground, cx, cy, rx, ry, spacing = 3) {
+  for (let y = cy - ry; y <= cy + ry; y += spacing) {
+    for (let x = cx - rx; x <= cx + rx; x += spacing) {
+      const n = ((x - cx) ** 2) / (rx ** 2) + ((y - cy) ** 2) / (ry ** 2);
+      const edgeNoise = Math.sin(x * 0.31) * 0.16 + Math.cos(y * 0.27) * 0.14;
+      if (n > 1 + edgeNoise) continue;
+      if ((x * 17 + y * 23) % 11 < 2) continue;
+      placeTree(ground, detail, blockers, foreground, x, y);
     }
   }
 }
@@ -199,5 +383,11 @@ export const interactions = [
   { id: 'stone_circle', type: 'label', x: 33.5, y: 19, label: 'Stone' },
   { id: 'cave', type: 'label', x: 64, y: 11, label: 'Cave' },
   { id: 'clearing', type: 'label', x: 15, y: 16, label: 'Clearing' },
-  { id: 'water', type: 'label', x: 25, y: 47, label: 'Water' },
+  { id: 'water', type: 'label', x: 30, y: 50, label: 'Water' },
+  { id: 'north_village_a', type: 'door', x: 117, y: 73, target: 'homeA', label: 'Enter' },
+  { id: 'north_village_b', type: 'door', x: 131, y: 75, target: 'homeB', label: 'Enter' },
+  { id: 'south_camp_a', type: 'door', x: 59.5, y: 163, target: 'homeC', label: 'Enter' },
+  { id: 'east_ruins', type: 'label', x: 207, y: 55, label: 'Ruins' },
+  { id: 'east_cave', type: 'label', x: 230, y: 37, label: 'Cave' },
+  { id: 'lake', type: 'label', x: 181, y: 128, label: 'Water' },
 ];
