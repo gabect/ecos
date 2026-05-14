@@ -6,7 +6,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    createTileTexture(this);
+    this.load.image('floor-tileset', 'assets/floor.png');
     this.createPlayerSheet();
     this.createGlowTexture();
     this.createParticleTexture();
@@ -14,6 +14,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create() {
+    createTileTexture(this);
     this.createPlayerAnimations();
     this.scene.start('WorldScene');
   }
